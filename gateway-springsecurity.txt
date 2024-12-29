@@ -1,0 +1,145 @@
+Below is an example of a Spring Boot application that implements microservices with **Spring Security** and **Spring Cloud Gateway** using Spring Boot version 2.5.6 and Java 17. It includes three microservices:
+
+1. **API Gateway**: Handles routing and security.
+2. **User Service**: Manages user data.
+3. **Order Service**: Handles orders.
+
+---
+
+### **1. Gateway Service (API Gateway)**
+
+#### `pom.xml`
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-gateway</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+</dependencies>
+```
+
+#### `application.yml`
+```yaml
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/user/**
+        - id: order-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/order/**
+security:
+  enabled: true
+```
+
+#### `SecurityConfig.java`
+```java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.csrf().disable()
+            .authorizeRequests()
+            .antMatchers("/user/**").permitAll()
+            .anyRequest().authenticated()
+            .and()
+            .httpBasic();
+    }
+}
+```
+
+---
+
+### **2. User Service**
+
+#### `pom.xml`
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+</dependencies>
+```
+
+#### `application.yml`
+```yaml
+server:
+  port: 8081
+```
+
+#### `UserController.java`
+```java
+@RestController
+@RequestMapping("/user")
+public class UserController {
+
+    @GetMapping("/info")
+    public ResponseEntity<String> getUserInfo() {
+        return ResponseEntity.ok("User Service: Info retrieved");
+    }
+}
+```
+
+---
+
+### **3. Order Service**
+
+#### `pom.xml`
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+</dependencies>
+```
+
+#### `application.yml`
+```yaml
+server:
+  port: 8082
+```
+
+#### `OrderController.java`
+```java
+@RestController
+@RequestMapping("/order")
+public class OrderController {
+
+    @GetMapping("/details")
+    public ResponseEntity<String> getOrderDetails() {
+        return ResponseEntity.ok("Order Service: Order details retrieved");
+    }
+}
+```
+
+---
+
+### **Testing the Setup**
+
+- Start the services in this order: **User Service (8081)**, **Order Service (8082)**, and then **Gateway Service (8080)**.
+- Test the endpoints through the API Gateway:
+  - `http://localhost:8080/user/info` → Routed to User Service.
+  - `http://localhost:8080/order/details` → Routed to Order Service.
+
+---
+
+Would you like to add token-based authentication (JWT) for security?
